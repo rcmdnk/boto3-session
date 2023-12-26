@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 import boto3
 from botocore.config import Config
 from botocore.exceptions import SSOTokenLoadError, UnauthorizedSSOTokenError
 
-from dataclasses import dataclass
-
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Any
-    from botocore.client import BaseClient
+
     from boto3.resources.base import ServiceResource
+    from botocore.client import BaseClient
 
 
 @dataclass
@@ -55,8 +55,8 @@ class Session:
     def __post_init__(self) -> None:
         self._config = Config(
             retries={
-                'max_attempts': self.max_attempts,
-                'mode': self.retry_mode
+                "max_attempts": self.max_attempts,
+                "mode": self.retry_mode,
             }
         )
         self._session = self.session()
@@ -72,7 +72,7 @@ class Session:
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
-            config=self._config
+            config=self._config,
         )
 
         try:
@@ -109,10 +109,10 @@ class Session:
 
     def update_config(self, kwargs: dict[str, Any]) -> None:
         config = self._config
-        if 'config' in kwargs:
-            kwargs['config'] = config.merge(kwargs['config'])
+        if "config" in kwargs:
+            kwargs["config"] = config.merge(kwargs["config"])
         else:
-            kwargs['config'] = config
+            kwargs["config"] = config
 
     def client(self, *args: Any, **kwargs: Any) -> BaseClient:
         self.update_config(kwargs)
