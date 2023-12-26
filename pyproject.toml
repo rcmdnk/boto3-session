@@ -1,17 +1,18 @@
 [tool.poetry]
-name = "python-template"
+name = "boto3-session"
 version = "0.0.1"
-description = ""
-authors = ["USER <EMAIL@example.com>"]
-repository = "https://github.com/rcmdnk/python-template"
-homepage = "https://github.com/rcmdnk/python-template"
+description = "Wrapper library for python boto3.session.Session."
+authors = ["rcmdnk <rcmdnk@gmail.com>"]
+repository = "https://github.com/rcmdnk/boto3-session"
+homepage = "https://github.com/rcmdnk/boto3-session"
 readme = "README.md"
 license = "apache-2.0"
 keywords = []
 classifiers = []
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.9,<3.13"
+boto3 = "^1.34.7"
 
 [tool.poetry.group.dev.dependencies]
 tomli = { version = "^2.0.1", python = "<3.11"}
