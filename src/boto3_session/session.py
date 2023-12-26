@@ -120,4 +120,4 @@ class Session:
 
     def resource(self, *args: Any, **kwargs: Any) -> ServiceResource:
         self.update_config(kwargs)
-        return self.session().client(*args, **kwargs)
+        return self.session().resource(*args, **kwargs)
