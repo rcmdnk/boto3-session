@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import boto3
 from botocore.config import Config
 from botocore.exceptions import SSOTokenLoadError, UnauthorizedSSOTokenError
@@ -8,9 +10,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any
-    from botocore.client import  BaseClient
+    from botocore.client import BaseClient
     from boto3.resources.base import ServiceResource
-
 
 
 @dataclass
@@ -51,32 +52,35 @@ class Session:
     retry_mode: str = "standard"
     max_attempts: int = 10
 
-
     def __post_init__(self) -> None:
         self._config = Config(
-                   retries = {
-                             'max_attempts': self.max_attempts,
-                                   'mode': self.retry_mode
-                                      }
-                   )
+            retries={
+                'max_attempts': self.max_attempts,
+                'mode': self.retry_mode
+            }
+        )
         self._session = None
 
+    def sso_login(self) -> None:
+        import subprocess  # nosec
+
+        _ = subprocess.run(["aws", "sso", "login"])  # nosec
+
     def set_assume_role(self) -> None:
-        client = boto3.client("sts",
-                              aws_access_key_id=self.aws_access_key_id,
-                              aws_secret_access_key=self.aws_secret_access_key,
-                              aws_session_token=self.aws_session_token,
-                              config=self._config
-                              )
+        client = boto3.client(
+            "sts",
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
+            config=self._config
+        )
 
         try:
             response = client.assume_role(
                 RoleArn=self.role_arn, RoleSessionName=self.session_name
             )
         except (SSOTokenLoadError, UnauthorizedSSOTokenError):
-            import subprocess  # nosec
-
-            _ = subprocess.run(["aws", "sso", "login"])  # nosec
+            self.sso_login()
             response = client.assume_role(
                 RoleArn=self.role_arn, RoleSessionName=self.session_name
             )
@@ -86,7 +90,7 @@ class Session:
         self.aws_session_token = response["Credentials"]["SessionToken"]
 
     def session(self) -> boto3.Session:
-        if self._session is None:
+        if self._session is not None:
             return self._session
 
         if self.role_arn:
@@ -99,6 +103,11 @@ class Session:
             aws_session_token=self.aws_session_token,
             region_name=self.region_name,
         )
+        try:
+            _ = self._session.get_credentials().access_key
+        except (SSOTokenLoadError, UnauthorizedSSOTokenError):
+            self.sso_login()
+            _ = self._session.get_credentials().access_key
         return self._session
 
     def update_config(self, kwargs: dict[str, Any]) -> None:
@@ -108,7 +117,7 @@ class Session:
         else:
             kwargs['config'] = config
 
-    def client(self, *args: list[Any], **kwargs: dict[str, Any]) -> BaseClient:
+    def client(self, *args: Any, **kwargs: Any) -> BaseClient:
         self.update_config(kwargs)
         return self.session().client(*args, **kwargs)
 

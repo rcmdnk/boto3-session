@@ -7,7 +7,7 @@ repository = "https://github.com/rcmdnk/boto3-session"
 homepage = "https://github.com/rcmdnk/boto3-session"
 readme = "README.md"
 license = "apache-2.0"
-keywords = []
+keywords = ['aws', 'boto3']
 classifiers = []
 
 [tool.poetry.dependencies]
