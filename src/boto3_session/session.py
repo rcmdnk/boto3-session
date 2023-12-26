@@ -59,7 +59,7 @@ class Session:
                 'mode': self.retry_mode
             }
         )
-        self._session = None
+        self._session = self.session()
 
     def sso_login(self) -> None:
         import subprocess  # nosec
@@ -90,9 +90,6 @@ class Session:
         self.aws_session_token = response["Credentials"]["SessionToken"]
 
     def session(self) -> boto3.Session:
-        if self._session is not None:
-            return self._session
-
         if self.role_arn:
             self.set_assume_role()
 
