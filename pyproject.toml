@@ -11,7 +11,7 @@ keywords = ['aws', 'boto3']
 classifiers = []
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = "^3.9"
 boto3 = "^1.34.7"
 
 [tool.poetry.group.dev.dependencies]
