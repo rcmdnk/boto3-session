@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "boto3-session"
-version = "0.0.2"
+version = "0.0.3"
 description = "Wrapper library for python boto3.session.Session."
 authors = ["rcmdnk <rcmdnk@gmail.com>"]
 repository = "https://github.com/rcmdnk/boto3-session"
