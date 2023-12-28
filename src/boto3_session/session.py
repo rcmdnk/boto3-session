@@ -59,7 +59,6 @@ class Session:
                 "mode": self.retry_mode,
             }
         )
-        self._session = self.session()
 
     def sso_login(self) -> None:
         import subprocess  # nosec
@@ -90,6 +89,9 @@ class Session:
         self.aws_session_token = response["Credentials"]["SessionToken"]
 
     def session(self) -> boto3.Session:
+        if _session := getattr(self, "_session", None):
+            return _session
+
         if self.role_arn:
             self.set_assume_role()
 
@@ -116,8 +118,8 @@ class Session:
 
     def client(self, *args: Any, **kwargs: Any) -> BaseClient:
         self.update_config(kwargs)
-        return self._session.client(*args, **kwargs)
+        return self.session().client(*args, **kwargs)
 
     def resource(self, *args: Any, **kwargs: Any) -> ServiceResource:
         self.update_config(kwargs)
-        return self._session.resource(*args, **kwargs)
+        return self.session().resource(*args, **kwargs)
