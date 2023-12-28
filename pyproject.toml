@@ -12,7 +12,9 @@ classifiers = []
 
 [tool.poetry.dependencies]
 python = "^3.9"
-boto3 = "^1.34.7"
+# To work with s3fs (aiobotocore) in other applications, need support for 'botocore>=1.33.2,<1.33.14'
+boto3 = ">=1.33"
+botocore = ">=1.33.2"
 
 [tool.poetry.group.dev.dependencies]
 tomli = { version = "^2.0.1", python = "<3.11"}
