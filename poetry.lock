@@ -161,17 +161,17 @@ black = ">=22.1"
 
 [[package]]
 name = "boto3"
-version = "1.35.50"
+version = "1.35.54"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.50-py3-none-any.whl", hash = "sha256:14724b905fd13f26d9d8f7cdcea0fa65a9acad79f60f41f7662667f4e233d97c"},
-    {file = "boto3-1.35.50.tar.gz", hash = "sha256:4f15d1ccb481d66f6925b8c91c970ce41b956b6ecf7c479f23e2159531b37eec"},
+    {file = "boto3-1.35.54-py3-none-any.whl", hash = "sha256:2d5e160b614db55fbee7981001c54476cb827c441cef65b2fcb2c52a62019909"},
+    {file = "boto3-1.35.54.tar.gz", hash = "sha256:7d9c359bbbc858a60b51c86328db813353c8bd1940212cdbd0a7da835291c2e1"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.50,<1.36.0"
+botocore = ">=1.35.54,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -180,13 +180,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.50"
+version = "1.35.54"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.50-py3-none-any.whl", hash = "sha256:965d3b99179ac04aa98e4c4baf4a970ebce77a5e02bb2a0a21cb6304e2bc0955"},
-    {file = "botocore-1.35.50.tar.gz", hash = "sha256:136ecef8d5a1088f1ba485c0bbfca40abd42b9f9fe9e11d8cde4e53b4c05b188"},
+    {file = "botocore-1.35.54-py3-none-any.whl", hash = "sha256:9cca1811094b6cdc144c2c063a3ec2db6d7c88194b04d4277cd34fc8e3473aff"},
+    {file = "botocore-1.35.54.tar.gz", hash = "sha256:131bb59ce59c8a939b31e8e647242d70cf11d32d4529fa4dca01feea1e891a76"},
 ]
 
 [package.dependencies]
@@ -1278,13 +1278,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
-version = "3.8.0"
+version = "4.0.1"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f"},
-    {file = "pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af"},
+    {file = "pre_commit-4.0.1-py2.py3-none-any.whl", hash = "sha256:efde913840816312445dc98787724647c65473daefe420785f885e8ed9a06878"},
+    {file = "pre_commit-4.0.1.tar.gz", hash = "sha256:80905ac375958c0444c65e9cebebd948b3cdb518f335a091a670a89d652139d2"},
 ]
 
 [package.dependencies]
@@ -1360,13 +1360,13 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyproject-pre-commit"
-version = "0.2.4"
+version = "0.2.5"
 description = "pre-commit hooks for python projects using pyproject.toml."
 optional = false
 python-versions = "<4.0.0,>=3.9.0"
 files = [
-    {file = "pyproject_pre_commit-0.2.4-py3-none-any.whl", hash = "sha256:ff5a7e6abd20451bc0638c9c0600ca948587e7eaad5d3695ec3795b1d3642ec6"},
-    {file = "pyproject_pre_commit-0.2.4.tar.gz", hash = "sha256:dfdc44efa82a700236248f9efd925be99e87be353ada9d62fa28614ce8182646"},
+    {file = "pyproject_pre_commit-0.2.5-py3-none-any.whl", hash = "sha256:a7d00119d4280001788f42af36d6db63927c34d3f86df2f48a6933c5ac8bae7b"},
+    {file = "pyproject_pre_commit-0.2.5.tar.gz", hash = "sha256:72141b3fecce999ef0df87790c4956535bb1bb81616c7ea0feda9e64b9240f6a"},
 ]
 
 [package.dependencies]
@@ -1395,7 +1395,7 @@ mdformat-gfm = ">=0.3.5,<0.4.0"
 mypy = ">=1.5.1,<2.0.0"
 numpydoc = ">=1.8.0,<2.0.0"
 pep8-naming = ">=0.14.0,<0.15.0"
-pre-commit = ">=3.3.3,<4.0.0"
+pre-commit = ">=4.0.0,<5.0.0"
 pycodestyle = ">=2.11.0,<3.0.0"
 shellcheck-py = ">=0.9.0.5,<0.10.0.0"
 
