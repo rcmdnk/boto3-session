@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING
 
 import boto3
 from botocore.config import Config
-from botocore.exceptions import SSOTokenLoadError, UnauthorizedSSOTokenError, TokenRetrievalError
+from botocore.exceptions import (
+    SSOTokenLoadError,
+    TokenRetrievalError,
+    UnauthorizedSSOTokenError,
+)
 
 if TYPE_CHECKING:
     from typing import Any
@@ -78,7 +82,11 @@ class Session:
             response = client.assume_role(
                 RoleArn=self.role_arn, RoleSessionName=self.session_name
             )
-        except (SSOTokenLoadError, UnauthorizedSSOTokenError, TokenRetrievalError):
+        except (
+            SSOTokenLoadError,
+            UnauthorizedSSOTokenError,
+            TokenRetrievalError,
+        ):
             self.sso_login()
             response = client.assume_role(
                 RoleArn=self.role_arn, RoleSessionName=self.session_name
@@ -104,7 +112,11 @@ class Session:
         )
         try:
             _ = self._session.get_credentials().access_key
-        except (SSOTokenLoadError, UnauthorizedSSOTokenError, TokenRetrievalError):
+        except (
+            SSOTokenLoadError,
+            UnauthorizedSSOTokenError,
+            TokenRetrievalError,
+        ):
             self.sso_login()
             _ = self._session.get_credentials().access_key
         return self._session
