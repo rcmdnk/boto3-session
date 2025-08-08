@@ -1,6 +1,6 @@
 [project]
 name = "boto3-session"
-version = "0.0.8"
+version = "0.0.9"
 description = "Wrapper library for python boto3.session.Session."
 authors = [ {name = "rcmdnk", email = "rcmdnk@gmail.com" }]
 readme = "README.md"
