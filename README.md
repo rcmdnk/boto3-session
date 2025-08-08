@@ -26,7 +26,7 @@ boto3_session.Session can be used similarly to boto3.Session:
 from boto3_session import Session
 
 session = Session()
-s3 = session.resource("s3")
+s3 = session.resource('s3')
 bucket = s3.Bucket(...)
 ...
 ```
@@ -47,7 +47,7 @@ Additionally, boto3_session.Session supports management of AssumeRole:
 boto3_session.Session includes `client` and `resource` methods, like boto3.Session. By default, the following configuration is passed to them:
 
 ```python
-Config(retries={"max_attempts": self.max_attempts, "mode": self.retry_mode})
+Config(retries={'max_attempts': self.max_attempts, 'mode': self.retry_mode})
 ```
 
 In boto3, the default values for `max_attempts` and `mode` are 5 and legacy, respectively. In boto3_session, they default to 3 and "standard".

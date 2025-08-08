@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Session:
-    """
-    Wrapper class for boto3.session.Session.
+    """Wrapper class for boto3.session.Session.
 
     Parameters
     ----------
@@ -44,6 +43,7 @@ class Session:
         Retry mode for failed requests. Default is "standard".
     max_attempts : int
         Maximum number of retry attempts for failed requests. Default is 10.
+
     """
 
     profile_name: str | None = None
@@ -52,26 +52,26 @@ class Session:
     aws_session_token: str | None = None
     region_name: str | None = None
     role_arn: str | None = None
-    session_name: str = "boto3_session"
-    retry_mode: str = "standard"
+    session_name: str = 'boto3_session'
+    retry_mode: str = 'standard'
     max_attempts: int = 10
 
     def __post_init__(self) -> None:
         self._config = Config(
             retries={
-                "max_attempts": self.max_attempts,
-                "mode": self.retry_mode,
+                'max_attempts': self.max_attempts,
+                'mode': self.retry_mode,
             }
         )
 
     def sso_login(self) -> None:
-        import subprocess  # nosec
+        import subprocess
 
-        _ = subprocess.run(["aws", "sso", "login"])  # nosec
+        _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
 
     def set_assume_role(self) -> None:
         client = boto3.client(
-            "sts",
+            'sts',
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
@@ -92,12 +92,12 @@ class Session:
                 RoleArn=self.role_arn, RoleSessionName=self.session_name
             )
 
-        self.aws_access_key_id = response["Credentials"]["AccessKeyId"]
-        self.aws_secret_access_key = response["Credentials"]["SecretAccessKey"]
-        self.aws_session_token = response["Credentials"]["SessionToken"]
+        self.aws_access_key_id = response['Credentials']['AccessKeyId']
+        self.aws_secret_access_key = response['Credentials']['SecretAccessKey']
+        self.aws_session_token = response['Credentials']['SessionToken']
 
     def session(self) -> boto3.Session:
-        if _session := getattr(self, "_session", None):
+        if _session := getattr(self, '_session', None):
             return _session
 
         if self.role_arn:
@@ -123,15 +123,15 @@ class Session:
 
     def update_config(self, kwargs: dict[str, Any]) -> None:
         config = self._config
-        if "config" in kwargs:
-            kwargs["config"] = config.merge(kwargs["config"])
+        if 'config' in kwargs:
+            kwargs['config'] = config.merge(kwargs['config'])
         else:
-            kwargs["config"] = config
+            kwargs['config'] = config
 
-    def client(self, *args: Any, **kwargs: Any) -> BaseClient:
+    def client(self, *args: Any, **kwargs: Any) -> BaseClient:  # noqa: ANN401
         self.update_config(kwargs)
         return self.session().client(*args, **kwargs)
 
-    def resource(self, *args: Any, **kwargs: Any) -> ServiceResource:
+    def resource(self, *args: Any, **kwargs: Any) -> ServiceResource:  # noqa: ANN401
         self.update_config(kwargs)
         return self.session().resource(*args, **kwargs)
