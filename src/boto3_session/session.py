@@ -65,9 +65,270 @@ class Session:
         )
 
     def sso_login(self) -> None:
-        import subprocess
+        """Perform SSO login using boto3's sso-oidc client.
 
-        _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
+        This method implements the device authorization flow for AWS SSO login
+        without requiring the AWS CLI to be installed.
+
+        If profile_name is set, it will read SSO configuration from the AWS
+        config file. Otherwise, it falls back to subprocess call to aws CLI.
+        """
+        import botocore.session
+
+        # If no profile name, fall back to subprocess (legacy behavior)
+        if not self.profile_name:
+            import subprocess
+
+            _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
+            return
+
+        # Get SSO configuration from profile
+        botocore_session = botocore.session.Session(profile=self.profile_name)
+        config = botocore_session.get_scoped_config()
+
+        # Check for SSO configuration
+        sso_start_url = config.get('sso_start_url') or config.get(
+            'sso_session'
+        )
+        sso_region = config.get('sso_region')
+
+        # If using sso_session, load from config
+        if not sso_start_url or sso_start_url in config:
+            sso_session_name = config.get('sso_session')
+            if sso_session_name:
+                full_config = botocore_session.full_config
+                sso_sessions = full_config.get('sso_sessions', {})
+                sso_session = sso_sessions.get(sso_session_name, {})
+                sso_start_url = sso_session.get('sso_start_url', sso_start_url)
+                sso_region = sso_session.get('sso_region', sso_region)
+
+        if not sso_start_url or not sso_region:
+            # No SSO config found, fall back to subprocess
+            import subprocess
+
+            _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
+            return
+
+        # Perform SSO login using boto3
+        self._perform_sso_device_flow(sso_start_url, sso_region)
+
+    def _perform_sso_device_flow(
+        self, start_url: str, sso_region: str
+    ) -> None:
+        """Perform the SSO device authorization flow.
+
+        Parameters
+        ----------
+        start_url : str
+            The SSO start URL.
+        sso_region : str
+            The AWS region for SSO.
+
+        """
+        # Create SSO-OIDC client
+        client = boto3.client('sso-oidc', region_name=sso_region)
+
+        # Register client and start device authorization
+        client_id, client_secret = self._register_sso_client(client)
+        device_info = self._start_device_authorization(
+            client, client_id, client_secret, start_url
+        )
+
+        # Poll for token and save to cache
+        token_response = self._poll_for_token(
+            client, client_id, client_secret, device_info
+        )
+
+        # Save token to cache
+        self._save_sso_token(token_response, start_url, sso_region)
+        print('\nSSO login successful!')  # noqa: T201
+
+    def _register_sso_client(self, client: BaseClient) -> tuple[str, str]:
+        """Register SSO client.
+
+        Parameters
+        ----------
+        client : BaseClient
+            SSO-OIDC client.
+
+        Returns
+        -------
+        tuple[str, str]
+            Client ID and client secret.
+
+        """
+        response = client.register_client(
+            clientName='boto3-session',
+            clientType='public',
+        )
+        return response['clientId'], response['clientSecret']
+
+    def _start_device_authorization(
+        self,
+        client: BaseClient,
+        client_id: str,
+        client_secret: str,
+        start_url: str,
+    ) -> dict[str, Any]:
+        """Start device authorization.
+
+        Parameters
+        ----------
+        client : BaseClient
+            SSO-OIDC client.
+        client_id : str
+            Client ID.
+        client_secret : str
+            Client secret.
+        start_url : str
+            SSO start URL.
+
+        Returns
+        -------
+        dict[str, Any]
+            Device authorization response.
+
+        """
+        import webbrowser
+
+        response = client.start_device_authorization(
+            clientId=client_id,
+            clientSecret=client_secret,
+            startUrl=start_url,
+        )
+
+        # Display instructions and open browser
+        user_code = response['userCode']
+        verification_uri = response['verificationUri']
+        verification_uri_complete = response.get('verificationUriComplete')
+
+        print(f'\nInitiating SSO login for {start_url}')  # noqa: T201
+        print(f'User code: {user_code}')  # noqa: T201
+        print(f'Verification URL: {verification_uri}')  # noqa: T201
+        print('\nOpening browser for authorization...')  # noqa: T201
+
+        # Open browser
+        try:
+            url_to_open = verification_uri_complete or verification_uri
+            webbrowser.open(url_to_open)
+        except Exception:  # noqa: S110, BLE001
+            # If browser cannot be opened, user can manually visit the URL
+            pass
+
+        print('Waiting for authorization... (press Ctrl+C to cancel)')  # noqa: T201
+
+        return response
+
+    def _poll_for_token(
+        self,
+        client: BaseClient,
+        client_id: str,
+        client_secret: str,
+        device_info: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Poll for SSO token.
+
+        Parameters
+        ----------
+        client : BaseClient
+            SSO-OIDC client.
+        client_id : str
+            Client ID.
+        client_secret : str
+            Client secret.
+        device_info : dict[str, Any]
+            Device authorization information.
+
+        Returns
+        -------
+        dict[str, Any]
+            Token response.
+
+        """
+        import time
+
+        device_code = device_info['deviceCode']
+        expires_in = device_info['expiresIn']
+        interval = device_info.get('interval', 5)
+
+        # Poll for token
+        start_time = time.time()
+        while time.time() - start_time < expires_in:
+            time.sleep(interval)
+
+            try:
+                token_response = client.create_token(
+                    clientId=client_id,
+                    clientSecret=client_secret,
+                    grantType='urn:ietf:params:oauth:grant-type:device_code',
+                    deviceCode=device_code,
+                )
+            except client.exceptions.AuthorizationPendingException:
+                # User hasn't authorized yet, continue polling
+                continue
+            except client.exceptions.SlowDownException:
+                # Polling too fast, increase interval
+                interval += 5
+                continue
+            except Exception as e:
+                print(f'\nError during SSO login: {e}')  # noqa: T201
+                msg = 'SSO login failed'
+                raise RuntimeError(msg) from e
+            else:
+                return token_response
+
+        # Timeout
+        msg = 'SSO login timed out - authorization not completed in time'
+        raise TimeoutError(msg)
+
+    def _save_sso_token(
+        self, token_response: dict[str, Any], start_url: str, sso_region: str
+    ) -> None:
+        """Save SSO token to cache.
+
+        Parameters
+        ----------
+        token_response : dict[str, Any]
+            Token response from create_token.
+        start_url : str
+            SSO start URL.
+        sso_region : str
+            SSO region.
+
+        """
+        import hashlib
+        import json
+        from datetime import datetime, timezone
+        from pathlib import Path
+
+        access_token = token_response['accessToken']
+        expires_in_seconds = token_response['expiresIn']
+        expires_at = (
+            datetime.now(timezone.utc).timestamp() + expires_in_seconds
+        )
+
+        # Calculate cache key (SHA1 of start URL)
+        # Note: AWS CLI uses SHA1 for cache key compatibility
+        cache_key = hashlib.sha1(
+            start_url.encode('utf-8'), usedforsecurity=False
+        ).hexdigest()
+
+        # Save to cache
+        cache_dir = Path.home() / '.aws' / 'sso' / 'cache'
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = cache_dir / f'{cache_key}.json'
+
+        cache_data = {
+            'startUrl': start_url,
+            'region': sso_region,
+            'accessToken': access_token,
+            'expiresAt': datetime.fromtimestamp(
+                expires_at, tz=timezone.utc
+            ).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        }
+
+        with cache_file.open('w') as f:
+            json.dump(cache_data, f, indent=2)
 
     def set_assume_role(self) -> None:
         client = boto3.client(

@@ -59,9 +59,12 @@ These defaults can be overridden by passing the following parameters to boto3_se
 
 ## SSO Login
 
-For configurations with SSO login, if the token is absent or expired, boto3_session.Session automatically executes aws sso login.
+For configurations with SSO login, if the token is absent or expired, boto3_session.Session automatically performs the SSO login using AWS's device authorization flow.
 
-Note: The aws command-line tool must be installed.
+The SSO login is performed using boto3's built-in sso-oidc client and does not require the AWS CLI to be installed. When a profile is configured with SSO settings, the library will:
 
-- [Install or update the latest version of the AWS CLI - AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-  Install or update the latest version of the AWS CLI - AWS Command Line Interface
+1. Initiate a device authorization flow with AWS SSO
+2. Display a user code and open a browser for authorization
+3. Poll for token completion and cache the token locally
+
+For profiles without SSO configuration, the library will fall back to using the `aws sso login` command if the AWS CLI is installed.
