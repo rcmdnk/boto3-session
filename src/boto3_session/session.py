@@ -87,20 +87,17 @@ class Session:
         config = botocore_session.get_scoped_config()
 
         # Check for SSO configuration
-        sso_start_url = config.get('sso_start_url') or config.get(
-            'sso_session'
-        )
+        sso_start_url = config.get('sso_start_url')
         sso_region = config.get('sso_region')
+        sso_session_name = config.get('sso_session')
 
         # If using sso_session, load from config
-        if not sso_start_url or sso_start_url in config:
-            sso_session_name = config.get('sso_session')
-            if sso_session_name:
-                full_config = botocore_session.full_config
-                sso_sessions = full_config.get('sso_sessions', {})
-                sso_session = sso_sessions.get(sso_session_name, {})
-                sso_start_url = sso_session.get('sso_start_url', sso_start_url)
-                sso_region = sso_session.get('sso_region', sso_region)
+        if sso_session_name and not sso_start_url:
+            full_config = botocore_session.full_config
+            sso_sessions = full_config.get('sso_sessions', {})
+            sso_session = sso_sessions.get(sso_session_name, {})
+            sso_start_url = sso_session.get('sso_start_url')
+            sso_region = sso_session.get('sso_region', sso_region)
 
         if not sso_start_url or not sso_region:
             # No SSO config found, fall back to subprocess
