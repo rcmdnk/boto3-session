@@ -85,6 +85,9 @@ class Session:
         sso_region = config.get('sso_region')
         sso_session_name = config.get('sso_session')
 
+        # Track which format we're using (affects cache key)
+        cache_key_name = None
+
         # If using sso_session, load from config
         if sso_session_name and not sso_start_url:
             full_config = botocore_session.full_config
@@ -92,6 +95,8 @@ class Session:
             sso_session = sso_sessions.get(sso_session_name, {})
             sso_start_url = sso_session.get('sso_start_url')
             sso_region = sso_session.get('sso_region', sso_region)
+            # For sso_session format, cache key is based on session name
+            cache_key_name = sso_session_name
 
         if not sso_start_url or not sso_region:
             # No SSO config found, fall back to subprocess
@@ -101,10 +106,15 @@ class Session:
             return
 
         # Perform SSO login using boto3
-        self._perform_sso_device_flow(sso_start_url, sso_region)
+        self._perform_sso_device_flow(
+            sso_start_url, sso_region, cache_key_name
+        )
 
     def _perform_sso_device_flow(
-        self, start_url: str, sso_region: str
+        self,
+        start_url: str,
+        sso_region: str,
+        cache_key_name: str | None = None,
     ) -> None:
         """Perform the SSO device authorization flow.
 
@@ -114,6 +124,9 @@ class Session:
             The SSO start URL.
         sso_region : str
             The AWS region for SSO.
+        cache_key_name : str | None
+            The name to use for cache key (e.g., session name for sso_session format).
+            If None, start_url will be used (legacy format).
 
         """
         # Create SSO-OIDC client
@@ -131,7 +144,9 @@ class Session:
         )
 
         # Save token to cache
-        self._save_sso_token(token_response, start_url, sso_region)
+        self._save_sso_token(
+            token_response, start_url, sso_region, cache_key_name
+        )
         print('\nSSO login successful!')  # noqa: T201
 
     def _register_sso_client(self, client: BaseClient) -> tuple[str, str]:
@@ -273,7 +288,11 @@ class Session:
         raise TimeoutError(msg)
 
     def _save_sso_token(
-        self, token_response: dict[str, Any], start_url: str, sso_region: str
+        self,
+        token_response: dict[str, Any],
+        start_url: str,
+        sso_region: str,
+        cache_key_name: str | None = None,
     ) -> None:
         """Save SSO token to cache.
 
@@ -285,6 +304,9 @@ class Session:
             SSO start URL.
         sso_region : str
             SSO region.
+        cache_key_name : str | None
+            The name to use for cache key (e.g., session name for sso_session format).
+            If None, start_url will be used (legacy format).
 
         """
         import hashlib
@@ -298,11 +320,17 @@ class Session:
             datetime.now(timezone.utc).timestamp() + expires_in_seconds
         )
 
-        # Calculate cache key (SHA1 of start URL)
-        # Note: AWS CLI uses SHA1 for cache key compatibility
-        cache_key = hashlib.sha1(
-            start_url.encode('utf-8'), usedforsecurity=False
-        ).hexdigest()
+        # Calculate cache key
+        # For sso_session format: SHA1 of session name
+        # For legacy format: SHA1 of start URL
+        if cache_key_name:
+            cache_key = hashlib.sha1(
+                cache_key_name.encode('utf-8'), usedforsecurity=False
+            ).hexdigest()
+        else:
+            cache_key = hashlib.sha1(
+                start_url.encode('utf-8'), usedforsecurity=False
+            ).hexdigest()
 
         # Save to cache
         cache_dir = Path.home() / '.aws' / 'sso' / 'cache'

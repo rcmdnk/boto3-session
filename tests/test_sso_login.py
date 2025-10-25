@@ -43,7 +43,7 @@ class TestSSOLogin:
                 session.sso_login()
                 # Should use device flow, not subprocess
                 mock_perform.assert_called_once_with(
-                    'https://example.awsapps.com/start', 'us-east-1'
+                    'https://example.awsapps.com/start', 'us-east-1', None
                 )
 
     def test_sso_login_with_profile_but_no_sso_config(self) -> None:
@@ -76,7 +76,7 @@ class TestSSOLogin:
             ) as mock_perform:
                 session.sso_login()
                 mock_perform.assert_called_once_with(
-                    'https://example.awsapps.com/start', 'us-east-1'
+                    'https://example.awsapps.com/start', 'us-east-1', None
                 )
 
     def test_register_sso_client(self) -> None:
@@ -255,6 +255,42 @@ class TestSSOLogin:
                 assert cache_data['accessToken'] == 'test-access-token'
                 assert 'expiresAt' in cache_data
 
+    def test_save_sso_token_with_session_name(self) -> None:
+        """Test SSO token saving with session name (sso_session format)."""
+        session = Session()
+
+        token_response = {
+            'accessToken': 'test-access-token',
+            'expiresIn': 3600,
+        }
+
+        with (
+            patch('pathlib.Path.mkdir'),
+            patch('pathlib.Path.open', create=True) as mock_open,
+        ):
+            mock_file = MagicMock()
+            mock_open.return_value.__enter__.return_value = mock_file
+
+            with patch('json.dump') as mock_json_dump:
+                # Call with cache_key_name to test sso_session format
+                session._save_sso_token(  # noqa: SLF001
+                    token_response,
+                    'https://example.awsapps.com/start',
+                    'us-east-1',
+                    'my-sso-session',
+                )
+
+                # Verify json.dump was called with correct structure
+                call_args = mock_json_dump.call_args
+                cache_data = call_args[0][0]
+                assert (
+                    cache_data['startUrl']
+                    == 'https://example.awsapps.com/start'
+                )
+                assert cache_data['region'] == 'us-east-1'
+                assert cache_data['accessToken'] == 'test-access-token'
+                assert 'expiresAt' in cache_data
+
     def test_sso_login_with_sso_session(self) -> None:
         """Test SSO login with sso_session configuration."""
         session = Session(profile_name='test-profile')
@@ -280,5 +316,7 @@ class TestSSOLogin:
             ) as mock_perform:
                 session.sso_login()
                 mock_perform.assert_called_once_with(
-                    'https://session.awsapps.com/start', 'us-east-1'
+                    'https://session.awsapps.com/start',
+                    'us-east-1',
+                    'my-sso-session',
                 )
