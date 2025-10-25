@@ -18,7 +18,7 @@ dependencies = [
 Repository = "https://github.com/rcmdnk/boto3-session"
 Documentation = "https://github.com/rcmdnk/boto3-session"
 Homepage = "https://github.com/rcmdnk/boto3-session"
-Issue = "https://github.com/rcmdnk/boto3-session/Issues"
+Issue = "https://github.com/rcmdnk/boto3-session/issues"
 
 [project.optional-dependencies]
 awscli2 = [
