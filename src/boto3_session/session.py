@@ -65,9 +65,14 @@ class Session:
         )
 
     def sso_login(self) -> None:
-        import subprocess
+        try:
+            import awscli.clidriver
 
-        _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
+            awscli.clidriver.main(['sso', 'login'])
+        except ImportError:
+            import subprocess
+
+            _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
 
     def set_assume_role(self) -> None:
         client = boto3.client(

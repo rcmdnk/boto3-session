@@ -14,6 +14,17 @@ dependencies = [
   "botocore >=1.33.2",
 ]
 
+[project.urls]
+Repository = "https://github.com/rcmdnk/boto3-session"
+Documentation = "https://github.com/rcmdnk/boto3-session"
+Homepage = "https://github.com/rcmdnk/boto3-session"
+Issue = "https://github.com/rcmdnk/boto3-session/ssues"
+
+[project.optional-dependencies]
+awscli2 = [
+    "awscli @ git+https://github.com/aws/aws-cli@2.31.22",
+]
+
 [dependency-groups]
 dev = [
     "tomli >= 2.0.1; python_version < '3.11'",
@@ -24,12 +35,12 @@ dev = [
     "pyproject-pre-commit[ruff] >= 0.3.5",
     "gitpython >= 3.1.41",
 ]
+awscli2 = [
+    "boto3-session[awscli2]",
+]
 
-[project.urls]
-Repository = "https://github.com/rcmdnk/boto3-session"
-Documentation = "https://github.com/rcmdnk/boto3-session"
-Homepage = "https://github.com/rcmdnk/boto3-session"
-Issue = "https://github.com/rcmdnk/boto3-session/ssues"
+[tool.uv]
+default-groups = ["dev", "awscli2"]
 
 [build-system]
 requires = ["uv_build>=0.9.2,<0.10.0"]

@@ -18,6 +18,14 @@ To install boto3-session, run the following command:
 $ pip install boto3-session
 ```
 
+### Optional Dependencies
+
+For SSO login support with the AWS CLI library (instead of requiring the aws command-line tool):
+
+```bash
+$ pip install boto3-session[awscli2]
+```
+
 ## Usage
 
 boto3_session.Session can be used similarly to boto3.Session:
@@ -61,7 +69,12 @@ These defaults can be overridden by passing the following parameters to boto3_se
 
 For configurations with SSO login, if the token is absent or expired, boto3_session.Session automatically executes aws sso login.
 
-Note: The aws command-line tool must be installed.
+### AWS CLI Integration
 
-- [Install or update the latest version of the AWS CLI - AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-  Install or update the latest version of the AWS CLI - AWS Command Line Interface
+The library supports two methods for SSO login:
+
+1. **Using awscli library (recommended)**: Install with `boto3-session[awscli2]` to use the AWS CLI library directly without requiring the aws command-line tool.
+
+1. **Using aws command-line tool**: If the awscli library is not installed, the library will fall back to using the aws command-line tool via subprocess.
+
+   - [Install or update the latest version of the AWS CLI - AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
