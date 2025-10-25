@@ -70,19 +70,13 @@ class Session:
         This method implements the device authorization flow for AWS SSO login
         without requiring the AWS CLI to be installed.
 
-        If profile_name is set, it will read SSO configuration from the AWS
-        config file. Otherwise, it falls back to subprocess call to aws CLI.
+        It reads SSO configuration from the AWS config file (using the specified
+        profile or the default profile). If no SSO configuration is found, it
+        falls back to subprocess call to aws CLI.
         """
         import botocore.session
 
-        # If no profile name, fall back to subprocess (legacy behavior)
-        if not self.profile_name:
-            import subprocess
-
-            _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
-            return
-
-        # Get SSO configuration from profile
+        # Get SSO configuration from profile (or default profile if None)
         botocore_session = botocore.session.Session(profile=self.profile_name)
         config = botocore_session.get_scoped_config()
 

@@ -10,15 +10,41 @@ from boto3_session import Session
 class TestSSOLogin:
     """Tests for SSO login methods."""
 
-    def test_sso_login_without_profile_uses_subprocess(self) -> None:
-        """Test that SSO login without profile falls back to subprocess."""
+    def test_sso_login_without_profile_but_no_sso_config(self) -> None:
+        """Test that SSO login without profile falls back to subprocess when no SSO config."""
         session = Session()
 
-        with patch('subprocess.run') as mock_run:
-            session.sso_login()
-            mock_run.assert_called_once()
-            args = mock_run.call_args[0][0]
-            assert args == ['aws', 'sso', 'login']
+        with patch('botocore.session.Session') as mock_botocore_session:
+            mock_instance = MagicMock()
+            mock_instance.get_scoped_config.return_value = {}
+            mock_botocore_session.return_value = mock_instance
+
+            with patch('subprocess.run') as mock_run:
+                session.sso_login()
+                mock_run.assert_called_once()
+                args = mock_run.call_args[0][0]
+                assert args == ['aws', 'sso', 'login']
+
+    def test_sso_login_without_profile_with_default_sso_config(self) -> None:
+        """Test SSO login without profile but with SSO config in default profile."""
+        session = Session()  # No profile_name
+
+        with patch('botocore.session.Session') as mock_botocore_session:
+            mock_instance = MagicMock()
+            mock_instance.get_scoped_config.return_value = {
+                'sso_start_url': 'https://example.awsapps.com/start',
+                'sso_region': 'us-east-1',
+            }
+            mock_botocore_session.return_value = mock_instance
+
+            with patch.object(
+                session, '_perform_sso_device_flow'
+            ) as mock_perform:
+                session.sso_login()
+                # Should use device flow, not subprocess
+                mock_perform.assert_called_once_with(
+                    'https://example.awsapps.com/start', 'us-east-1'
+                )
 
     def test_sso_login_with_profile_but_no_sso_config(self) -> None:
         """Test SSO login with profile but no SSO config falls back."""
