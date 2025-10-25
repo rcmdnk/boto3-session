@@ -208,20 +208,32 @@ class Session:
         verification_uri = response['verificationUri']
         verification_uri_complete = response.get('verificationUriComplete')
 
-        print(f'\nInitiating SSO login for {start_url}')  # noqa: T201
-        print(f'User code: {user_code}')  # noqa: T201
-        print(f'Verification URL: {verification_uri}')  # noqa: T201
-        print('\nOpening browser for authorization...')  # noqa: T201
+        # Determine which URL to use and what to display
+        if verification_uri_complete:
+            # Complete URL includes the code, so user just needs to approve
+            url_to_open = verification_uri_complete
+            print(
+                '\nAttempting to open SSO authorization page in your default browser.'
+            )
+            print(
+                f'If the browser does not open, open this URL: {verification_uri_complete}'
+            )
+        else:
+            # Fallback to basic flow requiring manual code entry
+            url_to_open = verification_uri
+            print(f'\nInitiating SSO login for {start_url}')  # noqa: T201
+            print(f'User code: {user_code}')  # noqa: T201
+            print(f'Verification URL: {verification_uri}')  # noqa: T201
+            print('\nOpening browser for authorization...')  # noqa: T201
 
         # Open browser
         try:
-            url_to_open = verification_uri_complete or verification_uri
             webbrowser.open(url_to_open)
         except Exception:  # noqa: S110, BLE001
             # If browser cannot be opened, user can manually visit the URL
             pass
 
-        print('Waiting for authorization... (press Ctrl+C to cancel)')  # noqa: T201
+        print('Waiting for authorization...')  # noqa: T201
 
         return response
 
