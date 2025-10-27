@@ -47,6 +47,8 @@ class Session:
         AWS session name. Default is "boto3_session".
     retry_mode : str
         Retry mode for failed requests. Default is "standard".
+    use_device_code : bool
+        Whether to use device code flow for SSO login. Default is False.
     max_attempts : int
         Maximum number of retry attempts for failed requests. Default is 10.
 
@@ -60,8 +62,8 @@ class Session:
     role_arn: str | None = None
     session_name: str = 'boto3_session'
     retry_mode: str = 'standard'
-    max_attempts: int = 10
     use_device_code: bool = False
+    max_attempts: int = 10
 
     def __post_init__(self) -> None:
         self._config = Config(
