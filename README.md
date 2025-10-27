@@ -7,8 +7,8 @@ A wrapper library for the boto3.session.Session class in Python.
 
 ## Requirement
 
-- Python versions 3.9, 3.10, 3.11, 3.12
-- Poetry (for development purposes)
+- Python versions >=3.9
+- uv (for development purposes)
 
 ## Installation
 
@@ -16,17 +16,6 @@ To install boto3-session, run the following command:
 
 ```bash
 $ pip install boto3-session
-```
-
-### Optional Dependencies
-
-The library now ships with a built-in IAM Identity Center (SSO) login flow, so
-no extra dependencies are required for common scenarios. If you still prefer to
-force the legacy AWS CLI implementation as a fallback, you can install the
-optional extra:
-
-```bash
-$ pip install boto3-session[awscli2]
 ```
 
 ## Usage
@@ -67,6 +56,12 @@ These defaults can be overridden by passing the following parameters to boto3_se
 
 - `retry_mode`: The retry mode for failed requests, defaulting to "standard".
 - `max_attempts`: The maximum number of retry attempts for failed requests, defaulting to 10.
+
+For SSO login:
+
+- `use_device_code`: A boolean flag to force the use of the device authorization flow for SSO login. Defaults to False.
+
+See the next section for details.
 
 ## SSO Login
 
