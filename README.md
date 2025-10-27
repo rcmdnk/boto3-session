@@ -20,7 +20,10 @@ $ pip install boto3-session
 
 ### Optional Dependencies
 
-For SSO login support with the AWS CLI library (instead of requiring the aws command-line tool):
+The library now ships with a built-in IAM Identity Center (SSO) login flow, so
+no extra dependencies are required for common scenarios. If you still prefer to
+force the legacy AWS CLI implementation as a fallback, you can install the
+optional extra:
 
 ```bash
 $ pip install boto3-session[awscli2]
@@ -67,14 +70,22 @@ These defaults can be overridden by passing the following parameters to boto3_se
 
 ## SSO Login
 
-For configurations with SSO login, if the token is absent or expired, boto3_session.Session automatically executes aws sso login.
+For configurations with SSO login, if the token is absent or expired,
+`boto3_session.Session` automatically orchestrates an IAM Identity Center login
+flow. By default the library re-implements the AWS CLI v2 PKCE authorization
+code flow (version 2.22.0 and newer) and opens the one-time verification URL in
+your browser. If the interactive flow cannot run for some reason, it falls
+back to invoking `aws sso login`.
 
-### AWS CLI Integration
+If you need to force the older device authorization flow (for example when the
+browser-based PKCE flow is not available), set the `use_device_code` flag when
+creating the session:
 
-The library supports two methods for SSO login:
+```python
+Session(use_device_code=True)
+```
 
-1. **Using awscli library (recommended)**: Install with `boto3-session[awscli2]` to use the AWS CLI library directly without requiring the aws command-line tool.
+This mirrors the `--use-device-code` option introduced in modern AWS CLI
+releases.
 
-1. **Using aws command-line tool**: If the awscli library is not installed, the library will fall back to using the aws command-line tool via subprocess.
-
-   - [Install or update the latest version of the AWS CLI - AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [Install or update the latest version of the AWS CLI - AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)

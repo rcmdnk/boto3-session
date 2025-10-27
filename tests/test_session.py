@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from botocore.config import Config
 from botocore.exceptions import (
     SSOTokenLoadError,
@@ -11,6 +12,7 @@ from botocore.exceptions import (
 )
 
 from boto3_session.session import Session
+from boto3_session.sso_login import SSOLoginError
 
 if TYPE_CHECKING:
     from typing import Any
@@ -65,41 +67,43 @@ class TestSessionInit:
 class TestSsoLogin:
     """Test sso_login method."""
 
-    def test_sso_login_with_awscli(self) -> None:
-        """Test sso_login when awscli is available."""
-        import sys
+    @patch('boto3_session.session.perform_sso_login')
+    def test_sso_login_success(self, mock_login: Mock) -> None:
+        """Custom SSO login flow is invoked with the current profile."""
+        session = Session(profile_name='dev')
+        session.sso_login()
+        mock_login.assert_called_once_with(
+            profile_name='dev', use_device_code=False
+        )
 
-        mock_awscli = MagicMock()
-        mock_clidriver = MagicMock()
-        mock_main = MagicMock()
-        mock_clidriver.main = mock_main
-        mock_awscli.clidriver = mock_clidriver
-
-        with patch.dict(
-            sys.modules,
-            {'awscli': mock_awscli, 'awscli.clidriver': mock_clidriver},
-        ):
-            session = Session()
+    @patch('boto3_session.session.perform_sso_login')
+    def test_sso_login_raises_runtime_error(self, mock_login: Mock) -> None:
+        """SSOLoginError is surfaced as RuntimeError."""
+        mock_login.side_effect = SSOLoginError('failure')
+        session = Session()
+        with pytest.raises(RuntimeError, match='SSO login failed: failure'):
             session.sso_login()
-            mock_main.assert_called_once_with(['sso', 'login'])
 
-    def test_sso_login_without_awscli(self) -> None:
-        """Test sso_login when awscli is not available."""
-        import subprocess
-        import sys
+    @patch('boto3_session.session.Session._fallback_cli_login')
+    @patch('boto3_session.session.perform_sso_login')
+    def test_sso_login_fallback_on_unexpected_error(
+        self, mock_login: Mock, mock_fallback: Mock
+    ) -> None:
+        """Unexpected exceptions trigger CLI fallback."""
+        mock_login.side_effect = RuntimeError('boom')
+        session = Session()
+        session.sso_login()
+        mock_fallback.assert_called_once()
 
-        # Remove awscli from modules if it exists
-        with (
-            patch.dict(
-                sys.modules, {'awscli': None, 'awscli.clidriver': None}
-            ),
-            patch.object(subprocess, 'run') as mock_run,
-        ):
-            session = Session()
-            session.sso_login()
-            mock_run.assert_called_once_with(
-                ['aws', 'sso', 'login'], check=False
-            )
+    @patch('boto3_session.session.perform_sso_login')
+    def test_sso_login_device_flow_flag(self, mock_login: Mock) -> None:
+        """Passing use_device_code propagates to login helper."""
+        session = Session(use_device_code=True)
+        session.sso_login()
+        mock_login.assert_called_once_with(
+            profile_name=None,
+            use_device_code=True,
+        )
 
 
 class TestSetAssumeRole:

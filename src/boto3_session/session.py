@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -11,11 +12,16 @@ from botocore.exceptions import (
     UnauthorizedSSOTokenError,
 )
 
+from .sso_login import SSOLoginError
+from .sso_login import login as perform_sso_login
+
 if TYPE_CHECKING:
     from typing import Any
 
     from boto3.resources.base import ServiceResource
     from botocore.client import BaseClient
+
+LOG = logging.getLogger(__name__)
 
 
 @dataclass
@@ -55,6 +61,7 @@ class Session:
     session_name: str = 'boto3_session'
     retry_mode: str = 'standard'
     max_attempts: int = 10
+    use_device_code: bool = False
 
     def __post_init__(self) -> None:
         self._config = Config(
@@ -66,13 +73,26 @@ class Session:
 
     def sso_login(self) -> None:
         try:
-            import awscli.clidriver
+            perform_sso_login(
+                profile_name=self.profile_name,
+                use_device_code=self.use_device_code,
+            )
+        except SSOLoginError as exc:
+            message = f'SSO login failed: {exc}'
+            raise RuntimeError(message) from exc
+        except Exception as err:  # noqa: BLE001 - fallback must handle any failure
+            LOG.debug(
+                'Custom SSO login failed (%s), attempting aws CLI fallback.',
+                err,
+                exc_info=True,
+            )
+            self._fallback_cli_login()
 
-            awscli.clidriver.main(['sso', 'login'])
-        except ImportError:
-            import subprocess
+    @staticmethod
+    def _fallback_cli_login() -> None:
+        import subprocess
 
-            _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
+        _ = subprocess.run(['aws', 'sso', 'login'], check=False)  # noqa: S607
 
     def set_assume_role(self) -> None:
         client = boto3.client(
